@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.sachin.edutrack"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +31,11 @@
     ],
     "updates": {
       "enabled": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "512da668-1506-4716-8b09-a2276383e7bc"
+      }
     }
   }
 }

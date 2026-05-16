@@ -15,11 +15,7 @@ import { Platform } from 'react-native';
  * Create a .env file in the frontend folder with EXPO_PUBLIC_API_URL=https://your-render-url.com/api
  * If not found, it falls back to the local development URLs.
  */
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || Platform.select({
-  android: 'http://10.32.149.177:5002/api', // Local dev fallback
-  ios: 'http://localhost:5002/api',
-  default: 'http://localhost:5002/api'
-});
+const BASE_URL = 'https://edutrack-backend-ypui.onrender.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
