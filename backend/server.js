@@ -97,9 +97,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
  */
 app.use((err, req, res, next) => {
   console.error('[GLOBAL_ERROR]', err.stack);
-  res.status(500).json({ 
-    message: 'Internal Server Error', 
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong' 
+  res.status(500).json({
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
 });
 
@@ -121,7 +121,7 @@ mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log('--- Connected to MongoDB successfully ---');
-    
+
     // Once the DB is ready, start listening for network requests
     app.listen(PORT, () => {
       console.log(`--- EduTrack Server is running on port ${PORT} ---`);
@@ -129,5 +129,9 @@ mongoose
   })
   .catch((err) => {
     console.error('--- MongoDB connection error ---', err.message);
-    process.exit(1); 
+    process.exit(1);
   });
+
+app.get("/", (req, res) => {
+  res.send("EduTrack Backend is Live 🚀");
+});
