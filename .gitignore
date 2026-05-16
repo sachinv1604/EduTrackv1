@@ -1,0 +1,56 @@
+# ======================
+# Dependencies
+# ======================
+node_modules/
+
+# ======================
+# Environment files
+# ======================
+.env
+.env.*
+
+# ======================
+# Expo / React Native
+# ======================
+.expo/
+.expo-shared/
+dist/
+
+# ======================
+# Build files
+# ======================
+build/
+coverage/
+
+# Android / iOS build outputs
+android/app/build/
+ios/build/
+
+# ======================
+# Logs
+# ======================
+*.log
+npm-debug.log*
+
+# ======================
+# OS files
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# IDE files
+# ======================
+.vscode/
+.idea/
+
+# ======================
+# Temporary uploads
+# (only if uploads are generated files)
+# ======================
+uploads/
+
+# ======================
+# Runtime files
+# ======================
+*.pid
