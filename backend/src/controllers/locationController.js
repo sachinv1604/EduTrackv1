@@ -165,7 +165,10 @@ const updateLocation = async (req, res) => {
       /**
        * 3. ETA CALCULATION
        */
-      const etaIdx = route.lastDepartedCheckpointIndex + 1;
+      const etaIdx = route.arrivedAtCheckpoint 
+        ? route.lastDepartedCheckpointIndex + 2 
+        : route.lastDepartedCheckpointIndex + 1;
+        
       if (etaIdx < route.checkpoints.length) {
         const nextCP = route.checkpoints[etaIdx];
         const [nLng, nLat] = nextCP.location.coordinates;

@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
       setUserToken(null);
       setUser(null);
       // GLOBAL CLEANUP: Kill any background tracking heartbeats
-      trackingService.stopTracking(); 
+      trackingService.stopTracking();
       console.log('[AUTH_LOGOUT] User logged out.');
     } catch (error) {
       console.error('[AuthContext] Error during logout storage:', error);
