@@ -87,20 +87,6 @@ const AdminDashboard = () => {
     }
   }, [activeTab]);
 
-  /**
-   * STAFF ROLE CYCLING
-   * Allows Admin to quickly flip a user between Driver and Coordinator roles.
-   */
-  const handleRoleChange = async (userId, currentRole) => {
-    const nextRole = currentRole === 'driver' ? 'coordinator' : 'driver';
-    try {
-      await userService.updateUserRole(userId, nextRole);
-      Alert.alert('Success', `User role updated to ${nextRole}`);
-      fetchData(); // Refresh list to reflect change
-    } catch (err) {
-      Alert.alert('Update Failed', err.toString());
-    }
-  };
 
   /**
    * STAFF APPROVAL
@@ -245,9 +231,6 @@ const AdminDashboard = () => {
                 <Text style={styles.itemName}>{user.name}</Text>
                 <Text style={styles.itemMeta}>{user.role} • {user.email}</Text>
               </View>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => handleRoleChange(user._id, user.role)}>
-                <Text style={styles.actionBtnText}>Change Role</Text>
-              </TouchableOpacity>
             </View>
           ))}
         </ScrollView>

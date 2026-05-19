@@ -14,13 +14,15 @@ import {
   ScrollView, 
   ActivityIndicator,
   Dimensions,
-  Alert
+  Alert,
+  Linking
 } from 'react-native';
 import CheckpointProgressBar from '../components/CheckpointProgressBar';
 import { COLORS } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import trackingService from '../services/trackingService';
 import userService from '../services/userService';
+import noticeService from '../services/noticeService';
 
 const StudentDashboard = () => {
   // 1. STATE & CONTEXT
@@ -103,6 +105,28 @@ const StudentDashboard = () => {
     );
   }
 
+  const handleShowNotices = async () => {
+    try {
+      const notices = await noticeService.getNotices();
+      if (notices && notices.length > 0) {
+        const noticesText = notices.map(n => `${n.title}\n${n.content}`).join('\n\n');
+        Alert.alert('Notices', noticesText);
+      } else {
+        Alert.alert('Notices', 'No new notices.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch notices.');
+    }
+  };
+
+  const handleCallCoordinator = () => {
+    if (status?.coordinatorPhone) {
+      Linking.openURL(`tel:${status.coordinatorPhone}`);
+    } else {
+      Alert.alert('Unavailable', 'Coordinator phone number not found.');
+    }
+  };
+
   const isBusActive = status?.isActive; // Check if the trip has started
 
   return (
@@ -151,6 +175,14 @@ const StudentDashboard = () => {
               />
             </View>
 
+            {isBusActive && status?.nextCheckpointDistance !== undefined && (
+              <View style={styles.distancePanel}>
+                <Text style={styles.distanceText}>
+                  {status?.arrivedAtCheckpoint ? "✅ Arrived at Stop" : "📍 Distance to Next Stop"}: <Text style={styles.distanceHighlight}>{status.nextCheckpointDistance}m</Text>
+                </Text>
+              </View>
+            )}
+
             {/* OFFLINE MESSAGE
                 Shown when the driver hasn't started the trip yet. */}
             {!isBusActive && (
@@ -165,11 +197,11 @@ const StudentDashboard = () => {
 
         {/* QUICK MENU */}
         <View style={styles.grid}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleShowNotices}>
             <Text style={styles.menuIcon}>📢</Text>
             <Text style={styles.menuText}>Notices</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleCallCoordinator}>
             <Text style={styles.menuIcon}>📞</Text>
             <Text style={styles.menuText}>Call Coordinator</Text>
           </TouchableOpacity>
@@ -269,6 +301,24 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginTop: 10,
+  },
+  distancePanel: {
+    marginTop: 15,
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.3)',
+  },
+  distanceText: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  distanceHighlight: {
+    color: COLORS.secondary,
+    fontWeight: 'bold',
   },
   offlineContainer: {
     alignItems: 'center',

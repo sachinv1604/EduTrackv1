@@ -25,8 +25,7 @@ const getBusStatus = async (req, res) => {
       return res.status(400).json({ message: 'Invalid Route ID provided' });
     }
 
-    // 1. FETCH THE ROUTE
-    const route = await Route.findById(busId);
+    const route = await Route.findById(busId).populate('coordinatorId');
     if (!route) {
       return res.status(404).json({ message: 'Route not found' });
     }
@@ -45,7 +44,7 @@ const getBusStatus = async (req, res) => {
         return res.status(403).json({ message: 'Not authorized: This is not your assigned route' });
       }
     } else if (userRole === 'coordinator') {
-      if (route.coordinatorId?.toString() !== userId) {
+      if (route.coordinatorId?._id?.toString() !== userId && route.coordinatorId?.toString() !== userId) {
         return res.status(403).json({ message: 'Not authorized: You are not the coordinator for this route' });
       }
     } else if (userRole === 'driver') {
@@ -106,6 +105,7 @@ const getBusStatus = async (req, res) => {
       nextCheckpointETA: route.nextCheckpointETA,
       nextCheckpointDistance: route.nextCheckpointDistance,
       currentLocation: route.currentLocation,
+      coordinatorPhone: route.coordinatorId?.phone || null,
       checkpoints
     });
 
