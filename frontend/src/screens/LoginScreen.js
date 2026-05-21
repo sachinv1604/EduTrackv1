@@ -18,6 +18,7 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showServerWakingUp, setShowServerWakingUp] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -26,19 +27,38 @@ const LoginScreen = ({ navigation }) => {
     }
 
     setIsLoading(true);
+    setShowServerWakingUp(false);
+    
+    // Set a timer to show connection message after 3 seconds of loading
+    const wakingUpTimer = setTimeout(() => {
+      setShowServerWakingUp(true);
+    }, 3000);
+
     try {
       const data = await authService.login(email, password);
+      clearTimeout(wakingUpTimer);
       // The backend returns { _id, name, email, phone, role, token }
       const { token, ...userData } = data;
       await login(token, userData);
     } catch (error) {
-      if (error && error.toString().includes('approval')) {
+      clearTimeout(wakingUpTimer);
+      const errorStr = error ? error.toString() : '';
+      
+      // Render Free Tier cold-start/timeout detection
+      if (errorStr.includes('timeout') || errorStr.includes('Network Error') || errorStr.includes('aborted') || errorStr.includes('ECONNABORTED')) {
+        Alert.alert(
+          'Server Waking Up',
+          'The server is currently waking up from standby (typical for Render free hosting). Please wait 10-15 seconds and try again.'
+        );
+      } else if (errorStr.includes('approval')) {
         Alert.alert('Access Pending', 'Your registration is awaiting approval from your Coordinator or Admin.');
       } else {
-        Alert.alert('Login Failed', error.toString());
+        Alert.alert('Login Failed', errorStr || 'An unexpected error occurred.');
       }
     } finally {
+      clearTimeout(wakingUpTimer);
       setIsLoading(false);
+      setShowServerWakingUp(false);
     }
   };
 
@@ -79,6 +99,12 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.buttonText}>Login</Text>
           )}
         </TouchableOpacity>
+
+        {isLoading && showServerWakingUp && (
+          <Text style={styles.wakingUpText}>
+            Connecting to server... (may take up to 30s)
+          </Text>
+        )}
 
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerLink}>Don't have an account? <Text style={{ color: COLORS.primary }}>Register</Text></Text>
@@ -134,6 +160,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+  },
+  wakingUpText: {
+    color: COLORS.secondary,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: -10,
+    marginBottom: 20,
+    fontWeight: '600',
   },
   buttonText: {
     color: COLORS.white,

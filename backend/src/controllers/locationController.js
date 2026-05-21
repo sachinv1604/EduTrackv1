@@ -159,6 +159,12 @@ const updateLocation = async (req, res) => {
 
           console.log(`[${now}] [LOG] [${routeReg}] DEPARTED from ${currentCP.name}`);
           sendDepartureNotifications(route, currentCP.name);
+
+          // Auto trip end when the bus departs the last checkpoint
+          if (nextCPIndex === route.checkpoints.length - 1) {
+            route.isActive = false;
+            console.log(`[AUTO-END] [${routeReg}] Trip ended automatically after departing the final checkpoint: ${currentCP.name}`);
+          }
         }
       }
 

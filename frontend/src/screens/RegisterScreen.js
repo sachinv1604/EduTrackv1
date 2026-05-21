@@ -48,15 +48,82 @@ const RegisterScreen = ({ navigation }) => {
     { label: 'Coordinator', value: 'coordinator' }
   ];
 
-  const handleRegister = async () => {
-    const { name, email, phone, collegeId, password, role } = formData;
-    
-    if (!name || !email || !phone || !password || !formData.requestedRoute) {
-      Alert.alert('Error', 'Please fill in all fields including route');
-      return;
+  // ─── FORM VALIDATION ──────────────────────────────────────────────────────
+  const validateForm = () => {
+    const { name, email, phone, password, role } = formData;
+
+    // NAME: only letters and spaces
+    if (!name.trim()) {
+      Alert.alert('Invalid Name', 'Name is required.');
+      return false;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(name.trim())) {
+      Alert.alert('Invalid Name', 'Name should contain only letters and spaces. No numbers or symbols are allowed.');
+      return false;
     }
 
-    // NEW Guard: Students must have a coordinator for their route
+    // EMAIL
+    if (!email.trim()) {
+      Alert.alert('Invalid Email', 'Email is required.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address (e.g. name@example.com).');
+      return false;
+    }
+
+    // PHONE: exactly 10 digits
+    if (!phone.trim()) {
+      Alert.alert('Invalid Phone', 'Phone number is required.');
+      return false;
+    }
+    if (!/^\d{10}$/.test(phone.trim())) {
+      Alert.alert('Invalid Phone Number', 'Phone number must be exactly 10 digits with no spaces, dashes, or country codes.');
+      return false;
+    }
+
+    // PASSWORD strength check
+    if (!password) {
+      Alert.alert('Invalid Password', 'Password is required.');
+      return false;
+    }
+    if (password.length < 8) {
+      Alert.alert('Weak Password', 'Password must be at least 8 characters long.');
+      return false;
+    }
+    if (!/[A-Z]/.test(password)) {
+      Alert.alert('Weak Password', 'Password must contain at least one uppercase letter (A–Z).');
+      return false;
+    }
+    if (!/[a-z]/.test(password)) {
+      Alert.alert('Weak Password', 'Password must contain at least one lowercase letter (a–z).');
+      return false;
+    }
+    if (!/[0-9]/.test(password)) {
+      Alert.alert('Weak Password', 'Password must contain at least one number (0–9).');
+      return false;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) {
+      Alert.alert('Weak Password', 'Password must contain at least one special character (e.g. @, #, $, !, %).');
+      return false;
+    }
+
+    // ROUTE
+    if (!formData.requestedRoute) {
+      Alert.alert('Route Required', 'Please select a route to continue.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRegister = async () => {
+    // Run validation first — returns false if any field is invalid
+    if (!validateForm()) return;
+
+    const { role } = formData;
+
+    // Guard: Students must have a coordinator assigned to their chosen route
     if (role === 'student' && formData.requestedRoute) {
       const selectedRoute = routes.find(r => r._id === formData.requestedRoute);
       if (selectedRoute && !selectedRoute.coordinatorId) {

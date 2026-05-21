@@ -68,8 +68,21 @@ const DriverDashboard = () => {
       routeId,
       (newStatus) => {
         // UI Callback: Keep the dashboard in sync with the server status
-        if (newStatus) setStatus(newStatus);
-        else setStatus(null);
+        if (newStatus) {
+          setStatus(newStatus);
+          // Auto trip end check: if the server reports the trip is no longer active
+          if (newStatus.isActive === false) {
+            setIsTripActive(false);
+            stopIntervals();
+            Alert.alert(
+              'Trip Complete',
+              'You have reached the final checkpoint. The trip has ended automatically.'
+            );
+          }
+        } else {
+          setStatus(null);
+          setIsTripActive(false);
+        }
       },
       (error) => {
         // Auth Callback: Handle token expiration

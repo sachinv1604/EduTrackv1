@@ -7,7 +7,7 @@
  * 3. Broadcast: Send push notifications to their route.
  * 4. Approvals: Approve new students joining the route.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -20,7 +20,8 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
-  Linking
+  Linking,
+  RefreshControl
 } from 'react-native';
 import CheckpointProgressBar from '../components/CheckpointProgressBar';
 import { COLORS } from '../theme/colors';
@@ -35,10 +36,12 @@ const CoordinatorDashboard = () => {
   const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState('bus'); // Controls which sub-screen is visible
   const [bus, setBus] = useState(null); // The physical bus/route info
+  const busRef = useRef(null); // Ref to avoid React stale closure bug in polling
   const [students, setStudents] = useState([]); // List of approved students
   const [pendingStudents, setPendingStudents] = useState([]); // List of students waiting for approval
   const [status, setStatus] = useState(null); // Real-time GPS status of the bus
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [approving, setApproving] = useState(null); // ID of student currently being approved
 
   // NOTICE FORM STATE
@@ -57,6 +60,7 @@ const CoordinatorDashboard = () => {
       const buses = await busService.getCoordinatorBuses();
       const myBus = Array.isArray(buses) ? buses[0] : buses;
       setBus(myBus); 
+      busRef.current = myBus;
       
       // 2. Get approved students for this route
       const studentsData = await userService.getRouteStudents();
@@ -83,14 +87,49 @@ const CoordinatorDashboard = () => {
     }
   };
 
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // 1. Get assigned bus
+      const buses = await busService.getCoordinatorBuses();
+      const myBus = Array.isArray(buses) ? buses[0] : buses;
+      setBus(myBus);
+      busRef.current = myBus;
+      
+      // 2. Get approved students for this route
+      const studentsData = await userService.getRouteStudents();
+      setStudents(studentsData);
+
+      // 3. Get students waiting for approval
+      const pendingData = await userService.getPendingApprovals();
+      setPendingStudents(pendingData);
+      
+      // 4. Get initial tracking status
+      if (myBus) {
+        try {
+          const routeId = myBus.routeId?._id || myBus.routeId || myBus._id;
+          const busStatus = await trackingService.getBusStatus(routeId);
+          setStatus(busStatus);
+        } catch (sErr) {
+          console.log('[Coordinator] Status fetch skip:', sErr);
+        }
+      }
+    } catch (err) {
+      console.log('[Coordinator] Refresh error:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   /**
    * LIVE STATUS POLLING
-   * Updates only the tracking data every 10 seconds.
+   * Updates only the tracking data every 8 seconds.
    */
   const fetchBusStatus = async () => {
-    if (!bus) return;
+    const currentBus = busRef.current;
+    if (!currentBus) return;
     try {
-      const routeId = bus.routeId?._id || bus.routeId || bus._id;
+      const routeId = currentBus.routeId?._id || currentBus.routeId || currentBus._id;
       const busStatus = await trackingService.getBusStatus(routeId);
       setStatus(busStatus);
     } catch (error) {
@@ -101,7 +140,7 @@ const CoordinatorDashboard = () => {
   // Run initialization on mount
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchBusStatus, 10000);
+    const interval = setInterval(fetchBusStatus, 8000);
     return () => clearInterval(interval); // Cleanup polling on exit
   }, []);
 
@@ -155,7 +194,17 @@ const CoordinatorDashboard = () => {
    * Shows the progress bar and driver contact info.
    */
   const renderBusTab = () => (
-    <ScrollView style={styles.tabContent}>
+    <ScrollView 
+      style={styles.tabContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={COLORS.primary}
+          colors={[COLORS.primary]}
+        />
+      }
+    >
       {!bus ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🚌</Text>

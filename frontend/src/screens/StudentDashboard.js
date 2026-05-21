@@ -15,7 +15,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
-  Linking
+  Linking,
+  RefreshControl
 } from 'react-native';
 import CheckpointProgressBar from '../components/CheckpointProgressBar';
 import { COLORS } from '../theme/colors';
@@ -29,6 +30,7 @@ const StudentDashboard = () => {
   const { logout, user } = useAuth(); // Get user info and logout function from Context
   const [status, setStatus] = useState(null); // Real-time bus status (checkpoints, isActive)
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [route, setRoute] = useState(null); // The basic route ID or info
   
   // 2. POLLING REFERENCE
@@ -65,10 +67,11 @@ const StudentDashboard = () => {
         setRoute({ _id: routeId });
         await fetchLiveStatus(routeId); // Fetch once immediately
         
-        // REPEAT every 10 seconds (Polling)
+        // REPEAT every 8 seconds (Polling)
+        if (statusInterval.current) clearInterval(statusInterval.current);
         statusInterval.current = setInterval(() => {
           fetchLiveStatus(routeId);
-        }, 10000);
+        }, 8000);
       }
     } catch (err) {
       console.log('[Student] Fetch error:', err);
@@ -82,6 +85,29 @@ const StudentDashboard = () => {
       setIsLoading(false);
     }
   };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const profile = await userService.getMe();
+      const routeId = profile?.assignedRoute || profile?.requestedRoute;
+      
+      if (routeId) {
+        setRoute({ _id: routeId });
+        await fetchLiveStatus(routeId);
+        
+        // Reset interval to align with manual refresh
+        if (statusInterval.current) clearInterval(statusInterval.current);
+        statusInterval.current = setInterval(() => {
+          fetchLiveStatus(routeId);
+        }, 8000);
+      }
+    } catch (err) {
+      console.log('[Student] Refresh error:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user]);
 
   /**
    * LIFECYCLE: Mounting & Unmounting
@@ -119,9 +145,23 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleCallCoordinator = () => {
-    if (status?.coordinatorPhone) {
-      Linking.openURL(`tel:${status.coordinatorPhone}`);
+  const handleCallCoordinator = async () => {
+    const phoneNumber = status?.coordinatorPhone;
+    if (phoneNumber) {
+      const url = `tel:${phoneNumber}`;
+      try {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert(
+            'Unable to Call',
+            `Phone calls are not supported on this device. The coordinator's phone number is: ${phoneNumber}`
+          );
+        }
+      } catch (err) {
+        Alert.alert('Error', 'An error occurred while trying to open the dialer.');
+      }
     } else {
       Alert.alert('Unavailable', 'Coordinator phone number not found.');
     }
@@ -142,7 +182,17 @@ const StudentDashboard = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+      >
         {/* PROGRESS CARD */}
         <View style={[styles.card, isBusActive && styles.activeCard]}>
           <View style={styles.cardHeader}>

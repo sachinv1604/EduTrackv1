@@ -19,6 +19,7 @@ const BASE_URL = 'https://edutrack-backend-ypui.onrender.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 15000, // 15 seconds timeout to catch Render's cold start early
   headers: {
     'Content-Type': 'application/json',
   },
