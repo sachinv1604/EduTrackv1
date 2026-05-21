@@ -54,3 +54,10 @@ uploads/
 # Runtime files
 # ======================
 *.pid
+
+# ======================
+# Firebase Credentials (NEVER commit these!)
+# ======================
+firebase-service-account.json
+google-services.json
+GoogleService-Info.plist

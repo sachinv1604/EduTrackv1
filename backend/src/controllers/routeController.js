@@ -6,6 +6,7 @@
  * route-specific info like the list of stops (checkpoints).
  */
 const Route = require('../models/Route');
+const fcm = require('../utils/fcm');
 
 /**
  * @desc    Get all routes with staff info
@@ -96,6 +97,9 @@ const toggleTripStatus = async (req, res) => {
     if (isActive) {
       route.lastDepartedCheckpointIndex = -1;
       route.arrivedAtCheckpoint = false;
+      
+      // Notify all subscribed students that the trip is starting
+      fcm.sendTripStartNotifications(route);
     }
 
     await route.save();

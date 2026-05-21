@@ -10,6 +10,7 @@ const Route = require('../models/Route');
 const CheckpointLog = require('../models/CheckpointLog');
 const User = require('../models/User');
 const { getDistanceFromLatLonInMeters } = require('../utils/distance');
+const fcm = require('../utils/fcm');
 
 // --- PROXIMITY CONSTANTS ---
 // ARRIVAL: 50m (Safe buffer for mobile GPS drift)
@@ -212,10 +213,8 @@ const updateLocation = async (req, res) => {
 const sendDepartureNotifications = async (route, checkpointName) => {
   try {
     console.log(`[NOTIFICATION] Alerting subscribers for Route ${route.registrationNo} - Departed from ${checkpointName}`);
-    
-    // Logic: Find users subscribed to this route and send FCM tokens
-    // ... FCM implementation details ...
-    
+    // Call the high-level FCM utility to find subscribers and dispatch batch notifications
+    await fcm.sendDepartureNotifications(route, checkpointName);
   } catch (error) {
     console.error('Error sending notifications:', error);
   }

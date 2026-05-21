@@ -135,7 +135,80 @@ const sendHighPriorityNotification = async (tokens, title, body, data = {}) => {
   }
 };
 
+// Require User model for database subscriber queries
+const User = require('../models/User');
+
+/**
+ * Send Trip Start Notifications
+ * Alerts all students subscribed to the route that the bus has started.
+ */
+const sendTripStartNotifications = async (route) => {
+  try {
+    if (!fcmInitialized) {
+      console.log(`[FCM_OFFLINE] Trip start notification skipped for Route: ${route.registrationNo}`);
+      return;
+    }
+
+    const students = await User.find({
+      subscribedRoutes: route._id,
+      fcmToken: { $ne: null }
+    }).select('fcmToken');
+
+    const tokens = students.map(u => u.fcmToken).filter(Boolean);
+    if (tokens.length === 0) {
+      console.log(`[FCM] No subscribed students with push tokens for Route: ${route.registrationNo}`);
+      return;
+    }
+
+    console.log(`[FCM] Sending trip start notifications to ${tokens.length} students for Route: ${route.registrationNo}`);
+    await sendHighPriorityNotification(
+      tokens,
+      `Bus Trip Started! 🚌`,
+      `Route "${route.name || route.registrationNo}" is now active. The bus is on its way! Tap to track live.`,
+      { routeId: route._id.toString(), type: 'TRIP_START' }
+    );
+  } catch (error) {
+    console.error('[FCM_TRIP_START_ERR]', error.message);
+  }
+};
+
+/**
+ * Send Checkpoint Departure Notifications
+ * Alerts all students subscribed to the route that the bus has departed a stop.
+ */
+const sendDepartureNotifications = async (route, checkpointName) => {
+  try {
+    if (!fcmInitialized) {
+      console.log(`[FCM_OFFLINE] Departure notification skipped for ${checkpointName}`);
+      return;
+    }
+
+    const students = await User.find({
+      subscribedRoutes: route._id,
+      fcmToken: { $ne: null }
+    }).select('fcmToken');
+
+    const tokens = students.map(u => u.fcmToken).filter(Boolean);
+    if (tokens.length === 0) {
+      console.log(`[FCM] No subscribed students with push tokens for Route: ${route.registrationNo}`);
+      return;
+    }
+
+    console.log(`[FCM] Sending departure notifications for stop "${checkpointName}" to ${tokens.length} students.`);
+    await sendHighPriorityNotification(
+      tokens,
+      `Bus departed: ${checkpointName} 📍`,
+      `Route "${route.name || route.registrationNo}" has departed from ${checkpointName}.`,
+      { routeId: route._id.toString(), type: 'DEPARTURE', checkpointName }
+    );
+  } catch (error) {
+    console.error('[FCM_DEPARTURE_ERR]', error.message);
+  }
+};
+
 module.exports = {
   sendPushNotification,
-  sendHighPriorityNotification
+  sendHighPriorityNotification,
+  sendTripStartNotifications,
+  sendDepartureNotifications
 };

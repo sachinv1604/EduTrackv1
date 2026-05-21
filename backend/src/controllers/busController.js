@@ -9,6 +9,7 @@
  * belongs to which route and who is driving it.
  */
 const Bus = require('../models/Route'); 
+const fcm = require('../utils/fcm');
 
 /**
  * @desc    Get all buses in the fleet
@@ -141,17 +142,12 @@ const toggleTripStatus = async (req, res) => {
 
     bus.isActive = isActive;
     
-    /**
-     * JOURNEY RESET LOGIC
-     * If the driver is STARTING a journey (isActive = true), 
-     * we must clear all data from the previous journey.
-     * 
-     * lastDepartedCheckpointIndex = -1 means "We haven't left the station yet".
-     * arrivedAtCheckpoint = false means "We are moving (or preparing to move)".
-     */
+    // Reset journey state when starting
     if (isActive) {
-      bus.lastDepartedCheckpointIndex = -1; 
+      bus.lastDepartedCheckpointIndex = -1;
       bus.arrivedAtCheckpoint = false;
+      // Notify subscribed students that the trip is starting
+      fcm.sendTripStartNotifications(bus);
     }
 
     await bus.save();

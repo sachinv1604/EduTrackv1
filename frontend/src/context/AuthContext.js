@@ -9,6 +9,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import trackingService from '../services/trackingService';
+import { registerForPushNotificationsAsync } from '../services/notificationService';
 
 // 1. Create the Context object
 const AuthContext = createContext();
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }) => {
    * ON START: checkLoginStatus
    * When the app first opens, we check the phone's memory (AsyncStorage) 
    * to see if the user was already logged in from last time.
+   * We also refresh the FCM push token so it stays current.
    */
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -40,6 +42,10 @@ export const AuthProvider = ({ children }) => {
           if (userData) {
             setUser(JSON.parse(userData));
           }
+          // Refresh FCM token on app restart (tokens can rotate)
+          registerForPushNotificationsAsync().catch(e =>
+            console.warn('[AUTH_CHECK] FCM token refresh failed:', e)
+          );
         } else {
           console.log('[AUTH_CHECK] No existing session found.');
         }
@@ -60,6 +66,11 @@ export const AuthProvider = ({ children }) => {
       setUserToken(token);
       setUser(userData);
       console.log('[AUTH_LOGIN] Login success! User:', userData.name);
+
+      // Register device for push notifications after successful login
+      registerForPushNotificationsAsync().catch(e =>
+        console.warn('[AUTH_LOGIN] FCM token registration failed:', e)
+      );
     } catch (error) {
       console.error('[AuthContext] Error during login storage:', error);
     }
