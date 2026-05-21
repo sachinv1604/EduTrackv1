@@ -150,17 +150,12 @@ const StudentDashboard = () => {
     if (phoneNumber) {
       const url = `tel:${phoneNumber}`;
       try {
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert(
-            'Unable to Call',
-            `Phone calls are not supported on this device. The coordinator's phone number is: ${phoneNumber}`
-          );
-        }
+        await Linking.openURL(url);
       } catch (err) {
-        Alert.alert('Error', 'An error occurred while trying to open the dialer.');
+        Alert.alert(
+          'Unable to Call',
+          `Could not open the dialer automatically. The coordinator's phone number is: ${phoneNumber}`
+        );
       }
     } else {
       Alert.alert('Unavailable', 'Coordinator phone number not found.');
