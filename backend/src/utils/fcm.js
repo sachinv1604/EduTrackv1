@@ -21,23 +21,32 @@ let fcmInitialized = false;
  */
 const initializeFCM = () => {
   try {
-    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+    let serviceAccount;
 
-    if (!serviceAccountPath) {
-      console.warn('[FCM] FIREBASE_SERVICE_ACCOUNT_PATH missing. Notifications are disabled.');
-      return;
+    // Option A: Initialize from raw JSON string (ideal for hosting services like Render)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    } 
+    // Option B: Initialize from local file path
+    else {
+      const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+
+      if (!serviceAccountPath) {
+        console.warn('[FCM] Firebase credentials missing (neither JSON string nor path found). Notifications disabled.');
+        return;
+      }
+
+      const absolutePath = path.isAbsolute(serviceAccountPath) 
+        ? serviceAccountPath 
+        : path.join(process.cwd(), serviceAccountPath);
+
+      if (!fs.existsSync(absolutePath)) {
+        console.warn(`[FCM] Key file not found at ${absolutePath}. Notifications disabled.`);
+        return;
+      }
+
+      serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
     }
-
-    const absolutePath = path.isAbsolute(serviceAccountPath) 
-      ? serviceAccountPath 
-      : path.join(process.cwd(), serviceAccountPath);
-
-    if (!fs.existsSync(absolutePath)) {
-      console.warn(`[FCM] Key file not found at ${absolutePath}. Notifications disabled.`);
-      return;
-    }
-
-    const serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
 
     // The Admin SDK allows our server to act with full powers in Firebase.
     admin.initializeApp({
