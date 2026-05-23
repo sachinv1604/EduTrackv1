@@ -106,6 +106,10 @@ const LoginScreen = ({ navigation }) => {
           </Text>
         )}
 
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={{ marginBottom: 15 }}>
+          <Text style={styles.forgotPasswordLink}>Forgot Password?</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerLink}>Don't have an account? <Text style={{ color: COLORS.primary }}>Register</Text></Text>
         </TouchableOpacity>
@@ -177,6 +181,12 @@ const styles = StyleSheet.create({
   registerLink: {
     textAlign: 'center',
     color: COLORS.textDim,
+  },
+  forgotPasswordLink: {
+    textAlign: 'center',
+    color: COLORS.textDim,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 

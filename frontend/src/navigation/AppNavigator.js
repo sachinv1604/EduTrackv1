@@ -7,6 +7,7 @@ import { COLORS } from '../theme/colors';
 // Screens
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import StudentDashboard from '../screens/StudentDashboard';
 import DriverDashboard from '../screens/DriverDashboard';
 import CoordinatorDashboard from '../screens/CoordinatorDashboard';
@@ -19,6 +20,7 @@ const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
   </Stack.Navigator>
 );
 

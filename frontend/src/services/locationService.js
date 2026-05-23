@@ -4,10 +4,18 @@ const locationService = {
   requestPermissions: async () => {
     console.log('[GPS] Requesting location permissions...');
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      const granted = status === 'granted';
-      console.log(`[GPS] Permission status: ${granted ? 'GRANTED' : 'DENIED'}`);
-      return granted;
+      const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+      const fgGranted = fgStatus === 'granted';
+      console.log(`[GPS] Foreground Permission status: ${fgGranted ? 'GRANTED' : 'DENIED'}`);
+      
+      if (fgGranted) {
+        // v3: Request background location permissions so updates keep streaming when driver exits app
+        const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+        const bgGranted = bgStatus === 'granted';
+        console.log(`[GPS] Background Permission status: ${bgGranted ? 'GRANTED' : 'DENIED'}`);
+      }
+      
+      return fgGranted;
     } catch (error) {
       console.error('[GPS_ERR] Permission request failed:', error);
       return false;

@@ -67,11 +67,11 @@ const StudentDashboard = () => {
         setRoute({ _id: routeId });
         await fetchLiveStatus(routeId); // Fetch once immediately
         
-        // REPEAT every 8 seconds (Polling)
+        // REPEAT every 6 seconds (Polling, optimized in v3)
         if (statusInterval.current) clearInterval(statusInterval.current);
         statusInterval.current = setInterval(() => {
           fetchLiveStatus(routeId);
-        }, 8000);
+        }, 6000);
       }
     } catch (err) {
       console.log('[Student] Fetch error:', err);
@@ -100,7 +100,7 @@ const StudentDashboard = () => {
         if (statusInterval.current) clearInterval(statusInterval.current);
         statusInterval.current = setInterval(() => {
           fetchLiveStatus(routeId);
-        }, 8000);
+        }, 6000);
       }
     } catch (err) {
       console.log('[Student] Refresh error:', err);

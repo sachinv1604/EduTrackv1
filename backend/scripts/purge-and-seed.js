@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const User = require('../src/models/User');
-const Bus = require('../src/models/Bus');
 const Route = require('../src/models/Route');
 
 dotenv.config();
@@ -14,9 +13,6 @@ const purgeAndSeed = async () => {
     // 1. Purge Data
     console.log('Purging Users (except Admin)...');
     await User.deleteMany({ role: { $ne: 'admin' } });
-    
-    console.log('Purging Buses...');
-    await Bus.deleteMany({});
     
     console.log('Purging Routes...');
     await Route.deleteMany({});

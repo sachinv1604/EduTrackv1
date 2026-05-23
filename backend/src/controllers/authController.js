@@ -11,6 +11,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Otp = require('../models/OTP');
+const { sendOtpEmail } = require('../utils/email');
 
 /**
  * Helper: Generate JSON Web Token (JWT)
@@ -187,9 +189,108 @@ const updateMe = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Request Password Reset (Generates and sends OTP)
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email address is required' });
+    }
+
+    const lowercaseEmail = email.toLowerCase().trim();
+
+    // 1. Verify User Exists
+    const user = await User.findOne({ email: lowercaseEmail });
+    if (!user) {
+      return res.status(404).json({ message: 'No registered account found with this email' });
+    }
+
+    // 2. Generate random 6-digit OTP
+    const rawOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 3. Encrypt/Hash the OTP before storing it for absolute security (bcrypt)
+    const salt = await bcrypt.genSalt(10);
+    const hashedOtp = await bcrypt.hash(rawOtp, salt);
+
+    // 4. Clean up any existing OTPs for this email to avoid duplicates
+    await Otp.deleteMany({ email: lowercaseEmail });
+
+    // 5. Store OTP in database
+    await Otp.create({
+      email: lowercaseEmail,
+      otp: hashedOtp
+    });
+
+    // 6. Send the email containing the raw OTP
+    await sendOtpEmail(lowercaseEmail, rawOtp);
+
+    res.status(200).json({ message: 'A secure 6-digit code has been sent to your email.' });
+  } catch (error) {
+    console.error('[AUTH_FORGOT_ERR]', error);
+    res.status(500).json({ message: 'Error processing forgot password request', error: error.message });
+  }
+};
+
+/**
+ * @desc    Verify OTP and Reset Password
+ * @route   POST /api/auth/reset-password
+ * @access  Public
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP code, and new password are required' });
+    }
+
+    const lowercaseEmail = email.toLowerCase().trim();
+
+    // 1. Fetch OTP record
+    const otpRecord = await Otp.findOne({ email: lowercaseEmail });
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Verification code has expired or is invalid' });
+    }
+
+    // 2. Verify OTP matches the hashed value
+    const otpMatch = await bcrypt.compare(otp.trim(), otpRecord.otp);
+    if (!otpMatch) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    // 3. Fetch User
+    const user = await User.findOne({ email: lowercaseEmail });
+    if (!user) {
+      return res.status(404).json({ message: 'User account not found' });
+    }
+
+    // 4. Hashing new password using bcrypt
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // 5. Update user and clean up DB
+    user.passwordHash = passwordHash;
+    await user.save();
+    
+    // Wipe OTP record so it can never be used again
+    await Otp.deleteMany({ email: lowercaseEmail });
+
+    res.status(200).json({ message: 'Password has been reset successfully! You can now log in.' });
+  } catch (error) {
+    console.error('[AUTH_RESET_ERR]', error);
+    res.status(500).json({ message: 'Error resetting password', error: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
-  updateMe
+  updateMe,
+  forgotPassword,
+  resetPassword
 };

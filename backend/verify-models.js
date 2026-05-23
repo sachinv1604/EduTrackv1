@@ -1,20 +1,20 @@
 const mongoose = require('mongoose');
 const User = require('./src/models/User');
 const Route = require('./src/models/Route');
-const Bus = require('./src/models/Bus');
 const CheckpointLog = require('./src/models/CheckpointLog');
 const LocationLog = require('./src/models/LocationLog');
 const Notice = require('./src/models/Notice');
+const Otp = require('./src/models/OTP');
 
 console.log('--- Verifying Models (Extended) ---');
 
 const models = [
   { name: 'User', model: User },
   { name: 'Route', model: Route },
-  { name: 'Bus', model: Bus },
   { name: 'CheckpointLog', model: CheckpointLog },
   { name: 'LocationLog', model: LocationLog },
-  { name: 'Notice', model: Notice }
+  { name: 'Notice', model: Notice },
+  { name: 'Otp', model: Otp }
 ];
 
 try {

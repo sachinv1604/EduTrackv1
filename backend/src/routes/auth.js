@@ -9,7 +9,9 @@ const {
   registerUser, 
   loginUser, 
   getMe,
-  updateMe 
+  updateMe,
+  forgotPassword,
+  resetPassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -20,6 +22,14 @@ router.post('/register', registerUser);
 // Public: Anyone can try to login
 // URL: POST /api/auth/login
 router.post('/login', loginUser);
+
+// Public: Request password reset OTP
+// URL: POST /api/auth/forgot-password
+router.post('/forgot-password', forgotPassword);
+
+// Public: Reset password using OTP
+// URL: POST /api/auth/reset-password
+router.post('/reset-password', resetPassword);
 
 /**
  * Private: Must be logged in (protect)

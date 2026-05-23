@@ -38,12 +38,27 @@ const createNotice = async (req, res) => {
      * NOTE: Multi-part form data (for files) sends arrays as JSON Strings. 
      * We must JSON.parse them back into Javascript Arrays for MongoDB.
      */
+    const parsedRoutes = targetRoutes ? JSON.parse(targetRoutes) : [];
+    const parsedRoles = targetRoles ? JSON.parse(targetRoles) : [];
+
+    // v3 FEATURE: Delete any previous notices from this author or targeting these routes before saving
+    if (parsedRoutes.length > 0) {
+      await Notice.deleteMany({
+        $or: [
+          { targetRoutes: { $in: parsedRoutes } },
+          { authorId: authorId }
+        ]
+      });
+    } else {
+      await Notice.deleteMany({ authorId: authorId });
+    }
+
     const notice = await Notice.create({
       title,
       content,
       authorId,
-      targetRoles: targetRoles ? JSON.parse(targetRoles) : [],
-      targetRoutes: targetRoutes ? JSON.parse(targetRoutes) : [],
+      targetRoles: parsedRoles,
+      targetRoutes: parsedRoutes,
       attachmentUrl
     });
 
@@ -74,24 +89,29 @@ const getNotices = async (req, res) => {
     const { role, subscribedRoutes } = req.user;
 
     /**
-     * MONGODB COMPLEX QUERY (Targeting)
-     * We want notices that match ANY of these three conditions ($or):
-     * 1. Match Role: This notice was specifically for your role (e.g. "driver").
-     * 2. Match Route: This notice was for a route you are tracking ($in).
-     * 3. Public: Both target arrays are empty (sent to everyone!).
+     * MONGODB TARGETED QUERY (v3 Upgrade)
+     * - Students strictly only see notices targeted to their subscribed routes from their coordinators.
+     * - Other roles (driver, coordinator, admin) see role-targeted, route-targeted, or public notices.
      */
-    const notices = await Notice.find({
-      $or: [
-        { targetRoles: role },
-        { targetRoutes: { $in: subscribedRoutes } },
-        { 
-          $and: [
-            { targetRoles: { $size: 0 } },
-            { targetRoutes: { $size: 0 } }
-          ]
-        }
-      ]
-    }).sort({ createdAt: -1 }); // Newest announcements at the top!
+    let query = {};
+    if (role === 'student') {
+      query = { targetRoutes: { $in: subscribedRoutes } };
+    } else {
+      query = {
+        $or: [
+          { targetRoles: role },
+          { targetRoutes: { $in: subscribedRoutes } },
+          { 
+            $and: [
+              { targetRoles: { $size: 0 } },
+              { targetRoutes: { $size: 0 } }
+            ]
+          }
+        ]
+      };
+    }
+
+    const notices = await Notice.find(query).sort({ createdAt: -1 }); // Newest announcements at the top!
 
     res.status(200).json(notices);
 

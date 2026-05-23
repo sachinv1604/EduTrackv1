@@ -61,6 +61,38 @@ const authService = {
       }
       throw error.response?.data?.message || 'Error occurred while fetching profile';
     }
+  },
+
+  /**
+   * FORGOT PASSWORD (v3 Upgrade)
+   * Sends the user's email address to request a secure OTP code.
+   */
+  forgotPassword: async (email) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      if (!error.response) {
+        throw 'Cannot connect to server. Please check your network or BASE_URL.';
+      }
+      throw error.response?.data?.message || 'Error requesting verification OTP';
+    }
+  },
+
+  /**
+   * RESET PASSWORD (v3 Upgrade)
+   * Submits the OTP code and new password to complete the reset flow.
+   */
+  resetPassword: async (email, otp, newPassword) => {
+    try {
+      const response = await api.post('/auth/reset-password', { email, otp, newPassword });
+      return response.data;
+    } catch (error) {
+      if (!error.response) {
+        throw 'Cannot connect to server. Please check your network or BASE_URL.';
+      }
+      throw error.response?.data?.message || 'Error occurred while resetting password';
+    }
   }
 };
 

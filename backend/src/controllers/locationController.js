@@ -13,10 +13,10 @@ const { getDistanceFromLatLonInMeters } = require('../utils/distance');
 const fcm = require('../utils/fcm');
 
 // --- PROXIMITY CONSTANTS ---
-// ARRIVAL: 50m (Safe buffer for mobile GPS drift)
-// DEPARTURE: 50m 
-const ARRIVAL_THRESHOLD = 50; 
-const DEPARTURE_THRESHOLD = 50; 
+// ARRIVAL: 60m (Safe buffer for mobile GPS drift, optimized in v3)
+// DEPARTURE: 60m 
+const ARRIVAL_THRESHOLD = 60; 
+const DEPARTURE_THRESHOLD = 60; 
 
 /**
  * @desc    Update bus location and process checkpoint logic

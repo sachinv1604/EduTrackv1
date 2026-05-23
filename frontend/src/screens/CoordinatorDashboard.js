@@ -137,12 +137,12 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  // Run initialization on mount
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchBusStatus, 8000);
-    return () => clearInterval(interval); // Cleanup polling on exit
-  }, []);
+    // Run initialization on mount (v3: Polling every 6 seconds)
+    useEffect(() => {
+      fetchData();
+      const interval = setInterval(fetchBusStatus, 6000);
+      return () => clearInterval(interval); // Cleanup polling on exit
+    }, []);
 
   /**
    * BROADCAST NOTICE
@@ -312,21 +312,7 @@ const CoordinatorDashboard = () => {
           multiline
         />
 
-        <Text style={styles.inputLabel}>Send to:</Text>
-        <View style={styles.roleContainer}>
-          <TouchableOpacity 
-            style={[styles.roleButton, targetRoles.includes('student') && styles.roleButtonActive]}
-            onPress={() => toggleTargetRole('student')}
-          >
-            <Text style={[styles.roleButtonText, targetRoles.includes('student') && styles.roleButtonTextActive]}>Students</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.roleButton, targetRoles.includes('driver') && styles.roleButtonActive]}
-            onPress={() => toggleTargetRole('driver')}
-          >
-            <Text style={[styles.roleButtonText, targetRoles.includes('driver') && styles.roleButtonTextActive]}>Drivers</Text>
-          </TouchableOpacity>
-        </View>
+        {/* v3 Upgrade: Announcements are strictly broadcasted to route students */}
 
         <TouchableOpacity style={styles.sendButton} onPress={handleSendNotice} disabled={isLoading}>
           {isLoading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.sendButtonText}>Send Notice</Text>}
