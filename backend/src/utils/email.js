@@ -23,13 +23,17 @@ const getTransporter = async () => {
 
   // Option A: Custom SMTP Credentials Provided in .env
   if (host && user && pass) {
-    console.log(`[EMAIL] Initializing custom SMTP transport using ${host}...`);
+    const smtpPort = parseInt(port, 10);
+    console.log(`[EMAIL] Initializing custom SMTP transport using ${host}:${smtpPort}...`);
     return nodemailer.createTransport({
       host,
-      port: parseInt(port, 10),
-      secure: parseInt(port, 10) === 465, // Use SSL/TLS for port 465
+      port: smtpPort,
+      secure: smtpPort === 465, // Use direct SSL/TLS for port 465
       auth: { user, pass },
-      family: 4 // Force IPv4 to prevent IPv6 network unreachable (ENETUNREACH) errors on hosting environments like Render
+      family: 4, // Force IPv4 to prevent IPv6 ENETUNREACH errors on cloud hosts (Render, Railway, etc.)
+      connectionTimeout: 10000, // 10s connection timeout (fail fast instead of hanging)
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     });
   }
 
