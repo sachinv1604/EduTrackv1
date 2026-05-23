@@ -28,7 +28,8 @@ const getTransporter = async () => {
       host,
       port: parseInt(port, 10),
       secure: parseInt(port, 10) === 465, // Use SSL/TLS for port 465
-      auth: { user, pass }
+      auth: { user, pass },
+      family: 4 // Force IPv4 to prevent IPv6 network unreachable (ENETUNREACH) errors on hosting environments like Render
     });
   }
 

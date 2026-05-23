@@ -29,6 +29,9 @@ const userRoutes = require('./src/routes/users');
 // Initialize the Express app
 const app = express();
 
+// Trust reverse proxy headers (e.g., Render, Heroku) for accurate rate limiting
+app.set('trust proxy', 1);
+
 /**
  * 2. MIDDLEWARE (The "Assembly Line")
  * Middleware functions run on every request before it reaches the routes.
