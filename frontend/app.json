@@ -34,8 +34,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "512da668-1506-4716-8b09-a2276383e7bc"
+        "projectId": "4d22e74e-3730-43f2-8c3f-7ab284a30fe9"
       }
-    }
+    },
+    "owner": "foredutrack"
   }
 }
