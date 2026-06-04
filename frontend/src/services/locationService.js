@@ -8,17 +8,18 @@ const locationService = {
       const fgGranted = fgStatus === 'granted';
       console.log(`[GPS] Foreground Permission status: ${fgGranted ? 'GRANTED' : 'DENIED'}`);
       
+      let bgGranted = false;
       if (fgGranted) {
         // v3: Request background location permissions so updates keep streaming when driver exits app
         const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-        const bgGranted = bgStatus === 'granted';
+        bgGranted = bgStatus === 'granted';
         console.log(`[GPS] Background Permission status: ${bgGranted ? 'GRANTED' : 'DENIED'}`);
       }
       
-      return fgGranted;
+      return { fgGranted, bgGranted };
     } catch (error) {
       console.error('[GPS_ERR] Permission request failed:', error);
-      return false;
+      return { fgGranted: false, bgGranted: false };
     }
   },
 

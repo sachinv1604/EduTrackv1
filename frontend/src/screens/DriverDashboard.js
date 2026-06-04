@@ -105,6 +105,23 @@ const DriverDashboard = () => {
       return;
     }
     const newStatus = !isTripActive;
+    
+    // Check permissions before starting a trip
+    if (newStatus) {
+      const { fgGranted, bgGranted } = await locationService.requestPermissions();
+      if (!fgGranted) {
+        Alert.alert('Permission Denied', 'GPS is required to track the bus.');
+        return;
+      }
+      if (!bgGranted) {
+        Alert.alert(
+          'Background Location Required',
+          'To track the bus when the screen is locked, in a call, or minimized, please set Location Access to "Allow all the time" in your device settings.'
+        );
+        return;
+      }
+    }
+
     console.log(`[DRIVE] Requesting Trip Change: ${newStatus ? 'START' : 'END'}`);
     setIsLoading(true);
 
@@ -400,12 +417,19 @@ const DriverDashboard = () => {
       
       try {
         // 1. Check Permissions AND Enablement
-        const hasPermission = await locationService.requestPermissions();
+        const { fgGranted, bgGranted } = await locationService.requestPermissions();
         const gpsEnabled = await locationService.checkLocationEnabled();
         
-        if (!hasPermission) {
-          Alert.alert('Permission Denied', 'GPS is required for tracking.');
-        } else if (!gpsEnabled) {
+        if (!fgGranted) {
+          Alert.alert('Permission Denied', 'Foreground GPS permission is required to track the bus.');
+        } else if (!bgGranted) {
+          Alert.alert(
+            'Background Location Required',
+            'To track the bus when the screen is locked, in a call, or minimized, please set Location Access to "Allow all the time" in your device settings.'
+          );
+        }
+        
+        if (!gpsEnabled) {
           Alert.alert('GPS Disabled', 'Please turn on location services in your phone settings.');
         }
 

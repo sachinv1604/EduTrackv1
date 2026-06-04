@@ -72,6 +72,7 @@ const trackingService = {
           notificationColor: COLORS?.primary || "#1E3A8A",
         },
         pausesUpdatesAutomatically: false,
+        showsBackgroundLocationIndicator: true,
       }).catch(err => {
         console.warn('[TRACK_SVC] Background location start failed, fallback to foreground only:', err);
       });
