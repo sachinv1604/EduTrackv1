@@ -38,7 +38,14 @@ const generateToken = (id) => {
  */
 const registerUser = async (req, res) => {
   try {
-    const { name, email, phone, role, password, requestedRoute } = req.body;
+    // SANITIZE INPUTS: Trim all string fields to eliminate trailing/leading spaces
+    // This prevents Mongoose ValidatorError when user accidentally has a space in their email
+    const name = req.body.name?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const phone = req.body.phone?.trim();
+    const role = req.body.role;
+    const password = req.body.password;
+    const requestedRoute = req.body.requestedRoute;
 
     // 1. DUPLICATE CHECK: Email & Phone must be unique in our system.
     const userExists = await User.findOne({ 

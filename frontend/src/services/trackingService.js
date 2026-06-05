@@ -159,7 +159,14 @@ const trackingService = {
 /**
  * TaskManager Background location task definition.
  * Natively called by the iOS/Android operating system background service.
+ * 
+ * This runs even when the app is LOCKED or MINIMIZED. It sends GPS pings
+ * to the backend which does all checkpoint detection server-side.
  */
+// Counter to track consecutive failures — avoids infinite battery drain
+let bgFailureCount = 0;
+const MAX_BG_FAILURES = 5; // Stop after 5 consecutive failures (~30 seconds)
+
 TaskManager.defineTask(BACKGROUND_TRACKING_TASK, async ({ data, error }) => {
   if (error) {
     console.error('[BG_TRACK_TASK] Task error:', error);
@@ -174,26 +181,60 @@ TaskManager.defineTask(BACKGROUND_TRACKING_TASK, async ({ data, error }) => {
       
       try {
         const routeId = await AsyncStorage.getItem('active_tracking_route_id');
-        if (routeId) {
-          if (location.coords.accuracy && location.coords.accuracy > 100) {
-            console.log(`[BG_TRACK_TASK] Skipping background ping: Poor accuracy (${location.coords.accuracy.toFixed(0)}m)`);
-            return;
-          }
-
-          // Transmit background coordinates to backend
-          await busService.updateLocation(
-            routeId,
-            location.coords.latitude,
-            location.coords.longitude,
-            location.coords.accuracy
-          );
-          console.log('[BG_TRACK_TASK] Background location uploaded successfully');
-        } else {
+        if (!routeId) {
           console.log('[BG_TRACK_TASK] No active routeId found in AsyncStorage. Stopping background updates.');
           await Location.stopLocationUpdatesAsync(BACKGROUND_TRACKING_TASK).catch(() => {});
+          return;
         }
+
+        if (location.coords.accuracy && location.coords.accuracy > 100) {
+          console.log(`[BG_TRACK_TASK] Skipping background ping: Poor accuracy (${location.coords.accuracy.toFixed(0)}m)`);
+          return;
+        }
+
+        // Transmit background coordinates to backend
+        await busService.updateLocation(
+          routeId,
+          location.coords.latitude,
+          location.coords.longitude,
+          location.coords.accuracy
+        );
+        
+        // Reset failure counter on success
+        bgFailureCount = 0;
+        console.log('[BG_TRACK_TASK] Background location uploaded successfully');
+
       } catch (err) {
-        console.error('[BG_TRACK_TASK] Upload failed:', err.message || err);
+        const errMsg = err?.toString() || '';
+        console.error('[BG_TRACK_TASK] Upload failed:', errMsg);
+        bgFailureCount++;
+
+        // CASE 1: Trip was ended (by server auto-end or manual end)
+        // Stop immediately — no point pinging a dead trip
+        if (errMsg.includes('Trip is not active') || errMsg.includes('Route not found')) {
+          console.log('[BG_TRACK_TASK] Server says trip is over. Stopping background task.');
+          await AsyncStorage.removeItem('active_tracking_route_id');
+          await Location.stopLocationUpdatesAsync(BACKGROUND_TRACKING_TASK).catch(() => {});
+          bgFailureCount = 0;
+          return;
+        }
+
+        // CASE 2: Auth token expired — stop tracking, driver needs to re-login
+        if (errMsg.includes('401') || errMsg.includes('Not authorized') || errMsg.includes('token')) {
+          console.log('[BG_TRACK_TASK] Auth token expired. Stopping background task.');
+          await AsyncStorage.removeItem('active_tracking_route_id');
+          await Location.stopLocationUpdatesAsync(BACKGROUND_TRACKING_TASK).catch(() => {});
+          bgFailureCount = 0;
+          return;
+        }
+
+        // CASE 3: Repeated network failures — stop to save battery
+        if (bgFailureCount >= MAX_BG_FAILURES) {
+          console.log(`[BG_TRACK_TASK] ${MAX_BG_FAILURES} consecutive failures. Stopping background task to save battery.`);
+          await AsyncStorage.removeItem('active_tracking_route_id');
+          await Location.stopLocationUpdatesAsync(BACKGROUND_TRACKING_TASK).catch(() => {});
+          bgFailureCount = 0;
+        }
       }
     }
   }

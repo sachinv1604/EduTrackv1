@@ -11,7 +11,19 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "preview-universal": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "image": "latest"
+      },
+      "env": {
+        "GRADLE_OPTS": "-Pandroid.injected.build.abi=armeabi-v7a,arm64-v8a,x86_64"
       }
     },
     "production": {

@@ -28,6 +28,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.sachin.edutrack",
+      "minSdkVersion": 23,
+      "targetSdkVersion": 34,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -45,7 +47,8 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow EduTrack to access your location at all times to stream GPS coordinates of the bus to students.",
-          "isAndroidBackgroundLocationEnabled": true
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ]
     ],
