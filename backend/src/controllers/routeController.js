@@ -188,13 +188,13 @@ const requestLiveLocation = async (req, res) => {
       return res.status(400).json({ message: 'Trip has already started' });
     }
 
-    // Cooldown check: 5 minutes (300,000 ms)
-    const COOLDOWN_MS = 5 * 60 * 1000;
+    // Cooldown check: 30 seconds (30,000 ms)
+    const COOLDOWN_MS = 30 * 1000;
     const now = new Date();
     if (route.lastLocationRequestTime && (now - route.lastLocationRequestTime < COOLDOWN_MS)) {
       const remainingSecs = Math.ceil((COOLDOWN_MS - (now - route.lastLocationRequestTime)) / 1000);
       return res.status(429).json({ 
-        message: `Driver was recently notified. Please wait another ${Math.ceil(remainingSecs / 60)} minute(s).` 
+        message: `Driver was recently notified. Please wait ${remainingSecs} more second(s).` 
       });
     }
 
