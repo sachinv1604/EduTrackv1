@@ -8,7 +8,8 @@ const {
   getMyBus,
   toggleTripStatus,
   getCoordinatorBuses,
-  resetCheckpoints
+  resetCheckpoints,
+  updateDailyStartTime
 } = require('../controllers/busController');
 const { protect, roleCheck } = require('../middleware/auth');
 
@@ -18,6 +19,7 @@ router.put('/:id', protect, roleCheck(['admin', 'coordinator']), updateBus);
 router.get('/my-bus', protect, roleCheck(['driver']), getMyBus);
 router.get('/coordinator-buses', protect, roleCheck(['coordinator']), getCoordinatorBuses);
 router.put('/:id/trip', protect, roleCheck(['driver']), toggleTripStatus);
+router.put('/:id/start-time', protect, roleCheck(['driver', 'admin', 'coordinator']), updateDailyStartTime);
 router.delete('/:id', protect, roleCheck(['admin']), deleteBus);
 router.post('/:id/reset-checkpoints', protect, roleCheck(['driver', 'admin', 'coordinator']), resetCheckpoints);
 

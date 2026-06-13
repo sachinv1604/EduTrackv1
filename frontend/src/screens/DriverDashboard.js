@@ -36,6 +36,7 @@ const DriverDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false); // Loading state for "Mark Checkpoint"
   const [newCheckpointName, setNewCheckpointName] = useState(''); // Text input for setup
+  const [dailyStartTime, setDailyStartTime] = useState(''); // Scheduled start time (HH:MM)
 
   /**
    * AUTH ERROR HANDLER
@@ -373,6 +374,32 @@ const DriverDashboard = () => {
     );
   };
 
+  const handleSaveStartTime = async () => {
+    if (!bus) return;
+
+    const formattedTime = dailyStartTime ? dailyStartTime.trim() : '';
+
+    if (formattedTime !== '') {
+      // Validate HH:MM format
+      const timeRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(formattedTime)) {
+        Alert.alert('Invalid Format', 'Please enter time in HH:MM format (24-hour clock, e.g. 08:30 or 15:45).');
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await busService.updateStartTime(bus._id, formattedTime || null);
+      setBus(response);
+      Alert.alert('Success', 'Daily trip start time updated successfully.');
+    } catch (error) {
+      Alert.alert('Error', error.toString() || 'Failed to update schedule time');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   /**
    * RESET CHECKPOINTS
    * Wipes all markers for this route so the driver can start from scratch.
@@ -439,6 +466,9 @@ const DriverDashboard = () => {
         const myBus = await busService.getMyBus();
         console.log(`[INIT] Assigned Route Found: ${myBus.name} (ID: ${myBus._id})`);
         setBus(myBus);
+        if (myBus.dailyStartTime) {
+          setDailyStartTime(myBus.dailyStartTime);
+        }
         
         /**
          * MANUAL CONTROL RESTORATION:
@@ -608,6 +638,31 @@ const DriverDashboard = () => {
             )}
           </View>
         )}
+
+         {/* DAILY SCHEDULE CARD */}
+         <View style={styles.card}>
+           <Text style={styles.cardLabel}>Daily Schedule</Text>
+           <Text style={styles.scheduleDescription}>
+             Set your daily scheduled trip start time. Reminders will be sent 15m, 10m, and 5m before this time.
+           </Text>
+           <View style={styles.timeInputContainer}>
+             <TextInput
+               style={styles.textInputInline}
+               placeholder="HH:MM (e.g. 08:30)"
+               placeholderTextColor={COLORS.textDim}
+               value={dailyStartTime}
+               onChangeText={setDailyStartTime}
+               maxLength={5}
+             />
+             <TouchableOpacity 
+               style={styles.saveTimeButton}
+               onPress={handleSaveStartTime}
+               disabled={isLoading}
+             >
+               <Text style={styles.saveTimeButtonText}>Save Time</Text>
+             </TouchableOpacity>
+           </View>
+         </View>
 
          {/* TRIP CONTROL CARD */}
          <View style={[styles.card, isTripActive && styles.activeCard]}>
@@ -993,6 +1048,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     marginRight: 15,
+  },
+  scheduleDescription: {
+    color: COLORS.textDim,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 15,
+  },
+  timeInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  textInputInline: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 12,
+    color: COLORS.text,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginRight: 10,
+  },
+  saveTimeButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveTimeButtonText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
 

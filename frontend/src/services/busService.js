@@ -185,6 +185,18 @@ const busService = {
     } catch (error) {
       throw error.response?.data?.message || 'Error resetting checkpoints';
     }
+  },
+
+  /**
+   * Set daily trip start time
+   */
+  updateStartTime: async (busId, dailyStartTime) => {
+    try {
+      const response = await api.put(`/buses/${busId}/start-time`, { dailyStartTime });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Error updating start time';
+    }
   }
 };
 

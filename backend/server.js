@@ -128,6 +128,9 @@ mongoose
     // Once the DB is ready, start listening for network requests
     app.listen(PORT, () => {
       console.log(`--- EduTrack Server is running on port ${PORT} ---`);
+      
+      // Start background trip reminders scheduler
+      require('./src/utils/scheduler');
     });
   })
   .catch((err) => {

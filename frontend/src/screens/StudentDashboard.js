@@ -25,6 +25,39 @@ import trackingService from '../services/trackingService';
 import userService from '../services/userService';
 import noticeService from '../services/noticeService';
 
+const isWithinRequestWindow = (startTimeStr) => {
+  if (!startTimeStr) return false;
+  
+  const now = new Date();
+  const curHour = now.getHours();
+  const curMin = now.getMinutes();
+  const curTimeInMins = curHour * 60 + curMin;
+  
+  const [startHour, startMin] = startTimeStr.split(':').map(Number);
+  const startTimeInMins = startHour * 60 + startMin;
+  
+  const startWindow = startTimeInMins - 15;
+  const endWindow = startTimeInMins + 120;
+  
+  // Handle standard window (doesn't wrap around midnight)
+  if (startWindow >= 0 && endWindow < 1440) {
+    return curTimeInMins >= startWindow && curTimeInMins <= endWindow;
+  }
+  
+  // Handle midnight boundary cases
+  if (startWindow < 0) {
+    const adjustedStartWindow = 1440 + startWindow;
+    return curTimeInMins >= adjustedStartWindow || curTimeInMins <= endWindow;
+  }
+  
+  if (endWindow >= 1440) {
+    const adjustedEndWindow = endWindow - 1440;
+    return curTimeInMins >= startWindow || curTimeInMins <= adjustedEndWindow;
+  }
+  
+  return false;
+};
+
 const StudentDashboard = () => {
   // 1. STATE & CONTEXT
   const { logout, user } = useAuth(); // Get user info and logout function from Context
@@ -32,6 +65,7 @@ const StudentDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [route, setRoute] = useState(null); // The basic route ID or info
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   
   // 2. POLLING REFERENCE
   // useRef is used here to store the ID of the "setInterval" 
@@ -130,6 +164,24 @@ const StudentDashboard = () => {
       </View>
     );
   }
+
+  const handleRequestLiveLocation = async () => {
+    const routeId = route?._id || status?.busId;
+    if (!routeId) {
+      Alert.alert('Error', 'Route details not found.');
+      return;
+    }
+
+    setIsRequestingLocation(true);
+    try {
+      const response = await trackingService.requestLiveLocation(routeId);
+      Alert.alert('Request Sent 📍', response.message || 'The driver has been notified to start the trip.');
+    } catch (error) {
+      Alert.alert('Request Failed', error.toString());
+    } finally {
+      setIsRequestingLocation(false);
+    }
+  };
 
   const handleShowNotices = async () => {
     try {
@@ -235,6 +287,26 @@ const StudentDashboard = () => {
                 <Text style={styles.offlineText}>
                   {status?.setupMode ? 'Route is currently in setup mode.' : 'The bus is currently offline. Tracking will begin once the driver starts the trip.'}
                 </Text>
+
+                {status?.dailyStartTime && (
+                  <Text style={styles.scheduleTimeText}>
+                    Scheduled Start Time: <Text style={styles.scheduleTimeHighlight}>{status.dailyStartTime}</Text>
+                  </Text>
+                )}
+
+                {!isBusActive && status?.dailyStartTime && isWithinRequestWindow(status.dailyStartTime) && (
+                  <TouchableOpacity 
+                    style={[styles.requestButton, isRequestingLocation && { opacity: 0.7 }]}
+                    onPress={handleRequestLiveLocation}
+                    disabled={isRequestingLocation}
+                  >
+                    {isRequestingLocation ? (
+                      <ActivityIndicator color={COLORS.white} />
+                    ) : (
+                      <Text style={styles.requestButtonText}>📍 Request Live Location</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -402,6 +474,36 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: '700',
     fontSize: 13,
+  },
+  scheduleTimeText: {
+    color: COLORS.textDim,
+    fontSize: 12,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  scheduleTimeHighlight: {
+    color: COLORS.accent,
+    fontWeight: 'bold',
+  },
+  requestButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    marginTop: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  requestButtonText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
 

@@ -171,6 +171,55 @@ const deleteRoute = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Student: Request live location (remind driver to start the trip)
+ * @route   POST /api/routes/:id/request-live-location
+ * @access  Private (Student / Admin / Coordinator)
+ */
+const requestLiveLocation = async (req, res) => {
+  try {
+    const route = await Route.findById(req.params.id).populate('driverId');
+
+    if (!route) {
+      return res.status(404).json({ message: 'Route not found' });
+    }
+
+    if (route.isActive) {
+      return res.status(400).json({ message: 'Trip has already started' });
+    }
+
+    // Cooldown check: 5 minutes (300,000 ms)
+    const COOLDOWN_MS = 5 * 60 * 1000;
+    const now = new Date();
+    if (route.lastLocationRequestTime && (now - route.lastLocationRequestTime < COOLDOWN_MS)) {
+      const remainingSecs = Math.ceil((COOLDOWN_MS - (now - route.lastLocationRequestTime)) / 1000);
+      return res.status(429).json({ 
+        message: `Driver was recently notified. Please wait another ${Math.ceil(remainingSecs / 60)} minute(s).` 
+      });
+    }
+
+    // Send FCM notification to the driver
+    if (route.driverId && route.driverId.fcmToken) {
+      await fcm.sendPushNotification(
+        route.driverId.fcmToken,
+        'Route Start Request 📍',
+        `Students are waiting for Route "${route.name}". Please start the trip!`,
+        { routeId: route._id.toString(), type: 'LOCATION_REQUEST' }
+      );
+
+      route.lastLocationRequestTime = now;
+      await route.save();
+      return res.status(200).json({ message: 'Driver notified successfully' });
+    } else {
+      return res.status(400).json({ 
+        message: 'Unable to request live location because the driver is currently offline or has no notifications enabled.' 
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Request failed', error: error.message });
+  }
+};
+
 module.exports = {
   getRoutes,
   createRoute,
@@ -178,5 +227,6 @@ module.exports = {
   deleteRoute,
   getMyRoute,
   getCoordinatorRoute,
-  toggleTripStatus
+  toggleTripStatus,
+  requestLiveLocation
 };

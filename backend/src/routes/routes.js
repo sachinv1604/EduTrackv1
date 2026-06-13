@@ -13,7 +13,8 @@ const {
   deleteRoute,
   getMyRoute,
   getCoordinatorRoute,
-  toggleTripStatus
+  toggleTripStatus,
+  requestLiveLocation
 } = require('../controllers/routeController');
 const { protect, roleCheck } = require('../middleware/auth');
 
@@ -42,5 +43,8 @@ router.get('/coordinator-buses', protect, roleCheck(['coordinator']), getCoordin
 
 // Trigger for the Driver's "Start Trip" button
 router.put('/:id/trip', protect, roleCheck(['driver']), toggleTripStatus);
+
+// Student: request live location reminder to driver
+router.post('/:id/request-live-location', protect, roleCheck(['student', 'admin', 'coordinator']), requestLiveLocation);
 
 module.exports = router;

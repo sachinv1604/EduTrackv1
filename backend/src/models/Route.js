@@ -151,6 +151,14 @@ const routeSchema = new mongoose.Schema({
   setupMode: {
     type: Boolean,
     default: true 
+  },
+  dailyStartTime: {
+    type: String,
+    default: null
+  },
+  lastLocationRequestTime: {
+    type: Date,
+    default: null
   }
 }, {
   // Adds "createdAt" and "updatedAt" to every Route document

@@ -37,6 +37,18 @@ const trackingService = {
   },
 
   /**
+   * Request driver to start trip
+   */
+  requestLiveLocation: async (routeId) => {
+    try {
+      const response = await api.post(`/routes/${routeId}/request-live-location`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Error requesting live location';
+    }
+  },
+
+  /**
    * START TRACKING (Heartbeat)
    * This handles high-accuracy foreground and background location streaming for DRIVERS.
    * Updates occur at a highly responsive 6-second interval (optimized in v3).

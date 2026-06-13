@@ -211,6 +211,46 @@ const resetCheckpoints = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Driver: Set daily trip start time
+ * @route   PUT /api/buses/:id/start-time
+ */
+const updateDailyStartTime = async (req, res) => {
+  try {
+    const { dailyStartTime } = req.body;
+    const bus = await Bus.findById(req.params.id);
+
+    if (!bus) {
+      return res.status(404).json({ message: 'Bus not found' });
+    }
+
+    // SECURITY CHECK: Is this the driver assigned to this bus?
+    // Admins and Coordinators are also allowed.
+    const isOwner = bus.driverId?.toString() === req.user._id.toString();
+    const isStaff = ['admin', 'coordinator'].includes(req.user.role);
+
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({ message: 'Not authorized: You are not assigned to this bus' });
+    }
+
+    if (dailyStartTime !== null && dailyStartTime !== '') {
+      // Validate HH:MM format (24 hour)
+      const timeRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(dailyStartTime)) {
+        return res.status(400).json({ message: 'Invalid time format. Please use HH:MM (24-hour clock).' });
+      }
+      bus.dailyStartTime = dailyStartTime;
+    } else {
+      bus.dailyStartTime = null;
+    }
+
+    await bus.save();
+    res.status(200).json(bus);
+  } catch (error) {
+    res.status(400).json({ message: 'Failed to update start time', error: error.message });
+  }
+};
+
 module.exports = {
   getBuses,
   createBus,
@@ -219,5 +259,6 @@ module.exports = {
   getMyBus,
   toggleTripStatus,
   getCoordinatorBuses,
-  resetCheckpoints
+  resetCheckpoints,
+  updateDailyStartTime
 };

@@ -106,6 +106,8 @@ const getBusStatus = async (req, res) => {
       nextCheckpointDistance: route.nextCheckpointDistance,
       currentLocation: route.currentLocation,
       coordinatorPhone: route.coordinatorId?.phone || null,
+      dailyStartTime: route.dailyStartTime || null,
+      lastLocationRequestTime: route.lastLocationRequestTime || null,
       checkpoints
     });
 
